@@ -22,6 +22,8 @@ intr:
     mov y osr          // restore counter
     mov osr x          // pins to prev
     irq 0              // capture irq
+    jmp y-- decr       // adjust counter
+decr:
     jmp y-- loop       // adjust counter
 loop:
     in pins PIN_COUNT  // read pins
@@ -32,7 +34,7 @@ loop:
     jmp x!=y intr      // capture irq
     mov y isr          // restore counter
     mov osr x          // prev to osr
-    jmp y-- loop  [8]  // counter decrement every 9+8=17 cycles
+    jmp y-- loop       // counter decrement every 9 cycles
 public start:
     mov y ~null        // init counter
     jmp loop
@@ -46,7 +48,7 @@ public start:
 
 #define PIN_COUNT 2
 
-#define COUNTER_CYCLES 17
+#define COUNTER_CYCLES 9
 
 typedef enum edge_type_t
 {
@@ -57,14 +59,14 @@ typedef enum edge_type_t
 
 typedef void (*capture_handler_t)(uint counter, edge_type_t edge);
 
-uint sm_capture_edge;
-PIO pio_capture_edge;
-void (*capture_handler[PIN_COUNT])(uint counter, edge_type_t edge) = {NULL};
+static uint sm_capture_edge;
+static PIO pio_capture_edge;
+static void (*capture_handler[PIN_COUNT])(uint counter, edge_type_t edge) = {NULL};
 
 static inline uint capture_edge_init(PIO pio, uint pin_base, float clk_div);
-void capture_edge_set_irq(uint pin, capture_handler_t handler);
-void on_capture_edge();
-uint get_captured_edge(uint pin, uint pins, uint prev);
+static inline void capture_edge_set_irq(uint pin, capture_handler_t handler);
+static inline void on_capture_edge();
+static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev);
 static inline uint bit_value(uint pos);
 
 static inline uint capture_edge_init(PIO pio, uint pin_base, float clk_div)
@@ -88,7 +90,7 @@ static inline uint capture_edge_init(PIO pio, uint pin_base, float clk_div)
     return sm_capture_edge;
 }
 
-void on_capture_edge()
+static inline void on_capture_edge()
 {
     static uint counter_prev = 0;
     if (pio_sm_is_rx_fifo_full(pio_capture_edge, sm_capture_edge))
@@ -112,9 +114,8 @@ void on_capture_edge()
     pio_interrupt_clear(pio_capture_edge, 0);
 }
 
-uint get_captured_edge(uint pin, uint pins, uint prev)
+static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev)
 {
-    // printf("\n%u %u %u %u %u %u", pin, pins, prev, (bit_value(pin) & pins), (pin & prev), (bit_value(pin) & pins));
     if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && (bit_value(pin) & pins))
         return EDGE_RISE;
     if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && !(bit_value(pin) & pins))
@@ -122,7 +123,7 @@ uint get_captured_edge(uint pin, uint pins, uint prev)
     return EDGE_NONE;
 }
 
-void capture_edge_set_irq(uint pin, capture_handler_t handler)
+static inline void capture_edge_set_irq(uint pin, capture_handler_t handler)
 {
     if (pin < PIN_COUNT)
     {
