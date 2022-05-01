@@ -1,20 +1,22 @@
 /**
  * -------------------------------------------------------------------------------
- * 
+ *
  * Copyright (c) 2022, Daniel Gorbea
  * All rights reserved.
  *
  * This source code is licensed under the MIT-style license found in the
- * LICENSE file in the root directory of this source tree. 
- * 
+ * LICENSE file in the root directory of this source tree.
+ *
  * -------------------------------------------------------------------------------
- * 
+ *
+ *  A pio program to capture signal edges on any pins of the RP2040:
+ *
  *  Base pin is 7. PIN_COUNT is 2 -> Pins 7 & 8 can be captured
  *
  *  Set the number of pins to capture in capture_edge.pio with PIN_COUNT (note there are two places)
  *
  *  Connect a signal to pins 7 and/or 8 and check output at 115200
- * 
+ *
  * -------------------------------------------------------------------------------
  */
 
@@ -63,16 +65,16 @@ static void capture_pin_1_handler(uint counter, edge_type_t edge)
     }
     printf("\nCapture pin 1. Counter: %u Freq: %.1f Duty: %.1f", counter, frequency, duty);
 }
-
 int main()
 {
-    uint sm_capture_edge;
-    PIO pio = pio0;
-    uint pin_base = 7;
+    PIO pio = pio0;        // values: pio0, pio1
+    uint sm;               //
+    uint pin_base = 7;     //
+    uint irq = PIO0_IRQ_0; // values for pio0: PIO0_IRQ_0, PIO0_IRQ_1. values for pio1: PIO1_IRQ_0, PIO1_IRQ_1
 
     stdio_init_all();
 
-    sm_capture_edge = capture_edge_init(pio, pin_base, clk_div);
+    sm = capture_edge_init(pio, pin_base, clk_div, irq);
     capture_edge_set_irq(0, capture_pin_0_handler);
     capture_edge_set_irq(1, capture_pin_1_handler);
 

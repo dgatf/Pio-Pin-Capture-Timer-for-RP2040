@@ -9,9 +9,11 @@
 
    -------------------------------------------------------------------------------
 
+   A pio program to capture signal edges on any pins of the RP2040:
+
    Base pin is 7. PIN_COUNT is 2 -> Pins 7 & 8 can be captured
 
-   Set the number of pins to capture in capture_edge.pio.h with PIN_COUNT 
+   Set the number of pins to capture in capture_edge.pio.h with PIN_COUNT
 
    Connect a signal to pins 7 and/or 8 and check output at 115200
 
@@ -41,7 +43,7 @@ static void capture_pin_0_handler(uint counter, edge_type_t edge)
     duty = duration_pulse / duration * 100;
     counter_edge_fall = counter;
   }
-  Serial.print("\n\rCapture pin 0. Counter:" );
+  Serial.print("\n\rCapture pin 0. Counter:");
   Serial.print(counter);
   Serial.print(" Freq: ");
   Serial.print(frequency);
@@ -66,7 +68,7 @@ static void capture_pin_1_handler(uint counter, edge_type_t edge)
     duty = duration_pulse / duration * 100;
     counter_edge_fall = counter;
   }
-  Serial.print("\n\rCapture pin 1. Counter:" );
+  Serial.print("\n\rCapture pin 1. Counter:");
   Serial.print(counter);
   Serial.print(" Freq: ");
   Serial.print(frequency);
@@ -74,21 +76,20 @@ static void capture_pin_1_handler(uint counter, edge_type_t edge)
   Serial.print(duty);
 }
 
-void setup() {
-
+void setup()
+{
   Serial.begin(115200);
 
-  uint sm_capture_edge;
-  PIO pio = pio0;
-  uint pin_base = 7;
+  PIO pio = pio0;        // values: pio0, pio1
+  uint sm;               //
+  uint pin_base = 7;     //
+  uint irq = PIO0_IRQ_0; // values for pio0: PIO0_IRQ_0, PIO0_IRQ_1. values for pio1: PIO1_IRQ_0, PIO1_IRQ_1
 
-  sm_capture_edge = capture_edge_init(pio, pin_base, clk_div);
+  sm = capture_edge_init(pio, pin_base, clk_div, irq);
   capture_edge_set_irq(0, capture_pin_0_handler);
   capture_edge_set_irq(1, capture_pin_1_handler);
-
-
 }
 
-void loop() {
-
+void loop()
+{
 }
