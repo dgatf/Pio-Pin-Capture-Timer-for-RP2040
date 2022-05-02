@@ -22,7 +22,9 @@
 
 #include "hardware/clocks.h"
 
-#include "capture_edge.pio.h"
+extern "C" {
+#include "capture_edge_pio.h"
+}
 
 float clk_div = 1;
 
@@ -86,8 +88,8 @@ void setup()
   uint irq = PIO0_IRQ_0; // values for pio0: PIO0_IRQ_0, PIO0_IRQ_1. values for pio1: PIO1_IRQ_0, PIO1_IRQ_1
 
   sm = capture_edge_init(pio, pin_base, clk_div, irq);
-  capture_edge_set_irq(0, capture_pin_0_handler);
-  capture_edge_set_irq(1, capture_pin_1_handler);
+  capture_edge_set_handler(0, capture_pin_0_handler);
+  capture_edge_set_handler(1, capture_pin_1_handler);
 }
 
 void loop()

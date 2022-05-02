@@ -22,7 +22,7 @@
 
 #include "hardware/clocks.h"
 
-#include "capture_edge.pio.h"
+#include "capture_edge_pio.h"
 
 float clk_div = 1;
 
@@ -65,6 +65,7 @@ static void capture_pin_1_handler(uint counter, edge_type_t edge)
     }
     printf("\nCapture pin 1. Counter: %u Freq: %.1f Duty: %.1f", counter, frequency, duty);
 }
+
 int main()
 {
     PIO pio = pio0;        // values: pio0, pio1
@@ -75,8 +76,8 @@ int main()
     stdio_init_all();
 
     sm = capture_edge_init(pio, pin_base, clk_div, irq);
-    capture_edge_set_irq(0, capture_pin_0_handler);
-    capture_edge_set_irq(1, capture_pin_1_handler);
+    capture_edge_set_handler(0, capture_pin_0_handler);
+    capture_edge_set_handler(1, capture_pin_1_handler);
 
     while (1)
     {
