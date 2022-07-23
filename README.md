@@ -4,11 +4,11 @@ A pio program to capture signal edges on any pins of the RP2040. It is compatibl
 
 How to use it:
 
-- With SDK. Add *capture_edge.pio, capture_edge_pio.h and capture_edge_pio.c,* to your project. Modify CMakeLists.txt. Add *pico_generate_pio_header* and the required libraries (pico_stdlib, hardware_irq, hardware_pio, hardware_clocks). See [CMakeLists.txt](sdk/CMakeLists.txt)
-- With Arduino. Add *capture_edge.pio.h* to your project
-- Set the number of pins to capture with PIN_COUNT in *capture_edge.pio* or in *capture_edge.pio.h* if using Arduino. Capture pins starts at *pin_base*. All available pins can be captured.
+- With SDK. Add *capture_edge.pio, capture_edge.h and capture_edge.c,* to your project. Modify CMakeLists.txt. Add *pico_generate_pio_header* and the required libraries (pico_stdlib, hardware_irq, hardware_pio, hardware_clocks). See [CMakeLists.txt](sdk/CMakeLists.txt)
+- With Arduino. Add *capture_edge.pio.h, capture_edge.h and capture_edge.c* to your project
+- Set the number of pins to capture with CAPTURE_EDGE_PIN_COUNT in *capture_edge.pio* or in *capture_edge.pio.h* if using Arduino. Capture pins starts at *pin_base*. All available pins can be captured.
 - Define the capture handlers which receives the counter value and the edge type (fall or rise).
-- If needed, change the state machine irq with IRQ_NUM. Valid values 0 to 3. Only change if conflicts with other state machines irqs.
+- If needed, change the state machine irq with CAPTURE_EDGE_IRQ_NUM. Valid values 0 to 3. Only change if conflicts with other state machines irqs.
 
 See [main.c](sdk/main.c) with code example to calculate *frecuency* and *duty*. Counter increments every 9 clock cycles. This value is defined in COUNTER_CYCLES. To obtain total clock divisor multiply:  COUNTER_CYCLES * *clk_div*.  
 \

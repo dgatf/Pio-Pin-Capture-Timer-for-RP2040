@@ -16,8 +16,8 @@
 #include "hardware/pio.h"
 #endif
 
-#define PIN_COUNT 2
-#define IRQ_NUM 0
+#define CAPTURE_EDGE_PIN_COUNT 2
+#define CAPTURE_EDGE_IRQ_NUM 0
 #define COUNTER_CYCLES 9
 
 // ------------ //
@@ -39,12 +39,12 @@ static const uint16_t capture_edge_program_instructions[] = {
     0x8000, //  6: push   noblock                    
     0xa047, //  7: mov    y, osr                     
     0xa0e1, //  8: mov    osr, x                     
-    0xc000+IRQ_NUM, //  9: irq    nowait 0                   
+    0xc000+CAPTURE_EDGE_IRQ_NUM, //  9: irq    nowait 0                   
     0x008b, // 10: jmp    y--, 11                    
     0x008c, // 11: jmp    y--, 12                    
             //     .wrap_target
-    PIN_COUNT+0x4000,    // 12: in     pins, PIN_COUNT                    
-    32-PIN_COUNT+0x4060, // 13: in     null, 32-PIN_COUNT                 
+    CAPTURE_EDGE_PIN_COUNT+0x4000,    // 12: in     pins, CAPTURE_EDGE_PIN_COUNT                    
+    32-CAPTURE_EDGE_PIN_COUNT+0x4060, // 13: in     null, 32-CAPTURE_EDGE_PIN_COUNT                 
     0xa026, // 14: mov    x, isr                     
     0xa0c2, // 15: mov    isr, y                     
     0xa047, // 16: mov    y, osr                     

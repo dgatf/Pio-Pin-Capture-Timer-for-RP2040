@@ -1,8 +1,8 @@
-#include "capture_edge_pio.h"
+#include "capture_edge.h"
 
 static uint sm;
 static PIO pio;
-static void (*capture_handler[PIN_COUNT])(uint counter, edge_type_t edge) = {NULL};
+static void (*capture_handler[CAPTURE_EDGE_PIN_COUNT])(uint counter, edge_type_t edge) = {NULL};
 
 static inline void handler_pio();
 static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev);
@@ -13,15 +13,15 @@ uint capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
     pio = pio;
     sm = pio_claim_unused_sm(pio, true);
     uint offset = pio_add_program(pio, &capture_edge_program);
-    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, PIN_COUNT, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin_base, CAPTURE_EDGE_PIN_COUNT, false);
     pio_sm_config c = capture_edge_program_get_default_config(offset);
     sm_config_set_clkdiv(&c, clk_div);
     sm_config_set_in_pins(&c, pin_base);
     if (irq == PIO0_IRQ_0 || irq == PIO1_IRQ_0)
-        pio_set_irq0_source_enabled(pio, (enum pio_interrupt_source)(pis_interrupt0 + IRQ_NUM), true);
+        pio_set_irq0_source_enabled(pio, (enum pio_interrupt_source)(pis_interrupt0 + CAPTURE_EDGE_IRQ_NUM), true);
     else
-        pio_set_irq1_source_enabled(pio, (enum pio_interrupt_source)(pis_interrupt0 + IRQ_NUM), true);
-    pio_interrupt_clear(pio, IRQ_NUM);
+        pio_set_irq1_source_enabled(pio, (enum pio_interrupt_source)(pis_interrupt0 + CAPTURE_EDGE_IRQ_NUM), true);
+    pio_interrupt_clear(pio, CAPTURE_EDGE_IRQ_NUM);
     pio_sm_init(pio, sm, offset + capture_edge_offset_start, &c);
     pio_sm_set_enabled(pio, sm, true);
     irq_set_exclusive_handler(irq, handler_pio);
@@ -32,7 +32,7 @@ uint capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
 
 void capture_edge_set_handler(uint pin, capture_handler_t handler)
 {
-    if (pin < PIN_COUNT)
+    if (pin < CAPTURE_EDGE_PIN_COUNT)
     {
         capture_handler[pin] = handler;
     }
@@ -50,7 +50,7 @@ static inline void handler_pio()
     uint pins = pio_sm_get_blocking(pio, sm);
     uint prev = pio_sm_get_blocking(pio, sm);
 
-    for (uint pin = 0; pin < PIN_COUNT; pin++)
+    for (uint pin = 0; pin < CAPTURE_EDGE_PIN_COUNT; pin++)
     {
         edge_type_t edge = get_captured_edge(pin, pins, prev);
         if (edge && *capture_handler[pin])
@@ -59,7 +59,7 @@ static inline void handler_pio()
         }
     }
 
-    pio_interrupt_clear(pio, IRQ_NUM);
+    pio_interrupt_clear(pio, CAPTURE_EDGE_IRQ_NUM);
 }
 
 static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev)
