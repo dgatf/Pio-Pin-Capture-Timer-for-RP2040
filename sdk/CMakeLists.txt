@@ -10,7 +10,7 @@ pico_sdk_init()
 
 add_executable(${PROJECT_NAME} 
     main.c
-    capture_edge_pio.c
+    capture_edge.c
 )
 
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/capture_edge.pio)

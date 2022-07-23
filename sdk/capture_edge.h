@@ -1,5 +1,5 @@
-#ifndef CAPTURE_EDGE_PIO
-#define CAPTURE_EDGE_PIO
+#ifndef CAPTURE_EDGE
+#define CAPTURE_EDGE
 
 #include <stdio.h>
 #include "pico/stdlib.h"

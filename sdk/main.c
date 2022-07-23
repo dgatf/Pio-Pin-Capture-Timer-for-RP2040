@@ -11,9 +11,9 @@
  *
  *  A pio program to capture signal edges on any pins of the RP2040:
  *
- *  Base pin is 7. PIN_COUNT is 2 -> Pins 7 & 8 can be captured
+ *  Base pin is 7. CAPTURE_EDGE_PIN_COUNT is 2 -> Pins 7 & 8 can be captured
  *
- *  Set the number of pins to capture in capture_edge.pio with PIN_COUNT (note there are two places)
+ *  Set the number of pins to capture in capture_edge.pio with CAPTURE_EDGE_PIN_COUNT
  *
  *  Connect a signal to pins 7 and/or 8 and check output at 115200
  *
@@ -22,7 +22,7 @@
 
 #include "hardware/clocks.h"
 
-#include "capture_edge_pio.h"
+#include "capture_edge.h"
 
 float clk_div = 1;
 
