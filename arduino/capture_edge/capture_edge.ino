@@ -83,11 +83,10 @@ void setup()
   Serial.begin(115200);
 
   PIO pio = pio0;        // values: pio0, pio1
-  uint sm;               //
-  uint pin_base = 7;     //
+  uint pin_base = 7;     // starting gpio to capture
   uint irq = PIO0_IRQ_0; // values for pio0: PIO0_IRQ_0, PIO0_IRQ_1. values for pio1: PIO1_IRQ_0, PIO1_IRQ_1
 
-  sm = capture_edge_init(pio, pin_base, clk_div, irq);
+  capture_edge_init(pio, pin_base, clk_div, irq);
   capture_edge_set_handler(0, capture_pin_0_handler);
   capture_edge_set_handler(1, capture_pin_1_handler);
 }
