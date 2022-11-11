@@ -1,6 +1,6 @@
-## Pin Capture Timer for RP2040
+## Pin Capture Timer library for RP2040 using PIO
 
-A pio program to capture signal edges on any pins of the RP2040. It is compatible with the [SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
+A library to capture signal edges on any pins of the RP2040 using PIO. It is compatible with the [SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
 
 How to use it:
 
@@ -8,7 +8,7 @@ How to use it:
 - With Arduino. Add *capture_edge.pio.h, capture_edge.h and capture_edge.c* to your project
 - Set the number of pins to capture with CAPTURE_EDGE_PIN_COUNT in *capture_edge.pio* or in *capture_edge.pio.h* if using Arduino. Capture pins starts at *pin_base*. All available pins can be captured.
 - Define the capture handlers which receives the counter value and the edge type (fall or rise).
-- If needed, change the state machine irq with CAPTURE_EDGE_IRQ_NUM. Valid values 0 to 3. Only change if conflicts with other state machines irqs.
+- Change CAPTURE_EDGE_IRQ_NUM if conflicts with other state machines irqs. Valid values 0 to 3.  
 
 See [main.c](sdk/main.c) with code example to calculate *frecuency* and *duty*. Counter increments every 9 clock cycles. This value is defined in COUNTER_CYCLES. To obtain total clock divisor multiply:  COUNTER_CYCLES * *clk_div*.  
 \
@@ -31,13 +31,17 @@ Parameters:
 &nbsp;&nbsp;**pin** - pin to capture  
 &nbsp;&nbsp;**handler** - function to handle the capture edge interrupt  
 \
+**void capture_edge_remove(void)**  
+
+Reset handlers and removes pio program from memory.  
+\
 Handler functions:  
 \
 **void capture_handler(uint counter, edge_type_t edge)**  
 
 Parameters received:  
 &nbsp;&nbsp;**counter** - counter   
-&nbsp;&nbsp;**edge** - type of edge: EDGE_RISE = 2, EDGE_FALL = 1  
+&nbsp;&nbsp;**edge** - type of edge: EDGE_RISING = 2, EDGE_FALLING = 1  
 \
 With *clock_div = 1*, the accuracy on frecuency measurement is 18 clock cycles (9 cycles per edge). For a clock frecuency of 125Mhz, accuracy on edge is 0.072 μs and on frecuency is 0.144 μs.
 
