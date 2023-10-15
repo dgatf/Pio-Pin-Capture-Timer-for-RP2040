@@ -32,43 +32,43 @@ char buffer[100];
 
 static void capture_pin_0_handler(uint counter, edge_type_t edge)
 {
-  static uint counter_EDGE_RISING = 0, counter_EDGE_FALLING = 0;
+  static uint counter_edge_rising = 0, counter_edge_falling = 0;
   pin = 0;
   is_captured = true;
   edge_type = edge;
     
   if (edge == EDGE_RISING)
   {
-    duration = (float)(counter - counter_EDGE_RISING) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
+    duration = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
     frequency = 1 / duration;
-    counter_EDGE_RISING = counter;
+    counter_edge_rising = counter;
   }
   if (edge == EDGE_FALLING)
   {
-    float duration_pulse = (float)(counter - counter_EDGE_RISING) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
+    float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
     duty = duration_pulse / duration * 100;
-    counter_EDGE_FALLING = counter;
+    counter_edge_falling = counter;
   }
 }
 
 static void capture_pin_1_handler(uint counter, edge_type_t edge)
 {
-  static uint counter_EDGE_RISING = 0, counter_EDGE_FALLING = 0;
+  static uint counter_edge_rising = 0, counter_edge_falling = 0;
   pin = 1;
   is_captured = true;
   edge_type = edge;
   
   if (edge == EDGE_RISING)
   {
-    duration = (float)(counter - counter_EDGE_RISING) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
+    duration = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
     frequency = 1 / duration;
-    counter_EDGE_RISING = counter;
+    counter_edge_rising = counter;
   }
   if (edge == EDGE_FALLING)
   {
-    float duration_pulse = (float)(counter - counter_EDGE_RISING) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
+    float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
     duty = duration_pulse / duration * 100;
-    counter_EDGE_FALLING = counter;
+    counter_edge_falling = counter;
   }
 }
 
