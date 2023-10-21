@@ -1,10 +1,10 @@
-## Pin Capture Timer library for RP2040 using PIO
+## Pin Capture Timer library for RP2040
 
-A library to capture signal edges on any pins of the RP2040 using PIO. It is compatible with the [SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
+A library to capture signal edges on any pins of the RP2040 using PIO and a DMA buffer. It is compatible with the [SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
 
 How to use it:
 
-- With SDK. Add *capture_edge.pio, capture_edge.h and capture_edge.c,* to your project. Modify CMakeLists.txt. Add *pico_generate_pio_header* and the required libraries (pico_stdlib, hardware_irq, hardware_pio, hardware_clocks). See [CMakeLists.txt](sdk/CMakeLists.txt)
+- With SDK. Add *capture_edge.pio, capture_edge.h and capture_edge.c,* to your project. Modify CMakeLists.txt. Add *pico_generate_pio_header* and the required libraries (pico_stdlib, hardware_irq, hardware_pio, hardware_clocks, hardware_dma). See [CMakeLists.txt](sdk/CMakeLists.txt)
 - With Arduino. Add *capture_edge.pio.h, capture_edge.h and capture_edge.c* to your project
 - Set the number of pins to capture with CAPTURE_EDGE_PIN_COUNT in *capture_edge.pio* or in *capture_edge.pio.h* if using Arduino. Capture pins starts at *pin_base*. All available pins can be captured.
 - Define the capture handlers which receives the counter value and the edge type (fall or rise).

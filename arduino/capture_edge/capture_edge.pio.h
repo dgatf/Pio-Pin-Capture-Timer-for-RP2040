@@ -16,46 +16,33 @@
 
 #define CAPTURE_EDGE_PIN_COUNT 2
 #define CAPTURE_EDGE_IRQ_NUM 2
-#define COUNTER_CYCLES 9
+#define COUNTER_CYCLES 5
 
 // ------------ //
 // capture_edge //
 // ------------ //
 
-#define capture_edge_wrap_target 10
-#define capture_edge_wrap 19
+#define capture_edge_wrap_target 2
+#define capture_edge_wrap 6
 
-#define capture_edge_offset_start 19u
+#define capture_edge_offset_start 2u
 
 static const uint16_t capture_edge_program_instructions[] = {
-    0xa0e6, //  0: mov    osr, isr                   
-    0xa0ce, //  1: mov    isr, !isr                  
-    0x8000, //  2: push   noblock                    
-    0xa0c1, //  3: mov    isr, x                     
-    0x8000, //  4: push   noblock                    
-    0xa047, //  5: mov    y, osr                     
-    0xa0e1, //  6: mov    osr, x                     
-    0xc000+CAPTURE_EDGE_IRQ_NUM, //  7: irq    nowait 2                   
-    0x0089, //  8: jmp    y--, 9                     
-    0x038a, //  9: jmp    y--, 10                [3] 
+    0xc000+CAPTURE_EDGE_IRQ_NUM, //  0: irq    nowait 2                   
+    0x8020, //  1: push   block                      
             //     .wrap_target
-    CAPTURE_EDGE_PIN_COUNT+0x4000,    // 12: in     pins, CAPTURE_EDGE_PIN_COUNT                    
-    32-CAPTURE_EDGE_PIN_COUNT+0x4060, // 13: in     null, 32-CAPTURE_EDGE_PIN_COUNT                 
-    0xa026, // 12: mov    x, isr                     
-    0xa0c2, // 13: mov    isr, y                     
-    0xa047, // 14: mov    y, osr                     
-    0x00a0, // 15: jmp    x != y, 0                  
-    0xa046, // 16: mov    y, isr                     
-    0xa0e1, // 17: mov    osr, x                     
-    0x008a, // 18: jmp    y--, 10                    
-    0xa04b, // 19: mov    y, !null                   
+    0xa041, //  2: mov    y, x                       
+    0x4000+CAPTURE_EDGE_PIN_COUNT, //  3: in     pins, 2                    
+    0x4060+32-CAPTURE_EDGE_PIN_COUNT, //  4: in     null, 30                   
+    0xa026, //  5: mov    x, isr                     
+    0x00a0, //  6: jmp    x != y, 0                  
             //     .wrap
 };
 
 #if !PICO_NO_HARDWARE
 static const struct pio_program capture_edge_program = {
     .instructions = capture_edge_program_instructions,
-    .length = 20,
+    .length = 7,
     .origin = -1,
 };
 
@@ -65,4 +52,3 @@ static inline pio_sm_config capture_edge_program_get_default_config(uint offset)
     return c;
 }
 #endif
-

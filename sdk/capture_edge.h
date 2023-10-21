@@ -17,6 +17,7 @@ extern "C" {
 
 #include "hardware/pio.h"
 #include "hardware/irq.h"
+#include "hardware/dma.h"
 #include "capture_edge.pio.h"
 
 typedef enum edge_type_t
@@ -28,7 +29,7 @@ typedef enum edge_type_t
 
 typedef void (*capture_handler_t)(uint counter, edge_type_t edge);
 
-uint capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq);
+void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq);
 void capture_edge_set_handler(uint pin, capture_handler_t handler);
 void capture_edge_remove(void);
 
