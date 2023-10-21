@@ -26,28 +26,29 @@
 #include "capture_edge.h"
 
 float clk_div = 1;
-volatile uint counter, pin;
-volatile float frequency, duty, duration;
+volatile uint capture_counter, pin;
+volatile float frequency, duty, duration_cycle;
 volatile bool is_captured;
 volatile edge_type_t edge_type;
 
 static void capture_pin_0_handler(uint counter, edge_type_t edge)
 {
     static uint counter_edge_rising = 0, counter_edge_falling = 0;
+    capture_counter = counter;
     pin = 0;
     is_captured = true;
     edge_type = edge;
 
     if (edge == EDGE_RISING)
     {
-        duration = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
-        frequency = 1 / duration;
+        duration_cycle = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
+        frequency = 1 / duration_cycle;
         counter_edge_rising = counter;
     }
     if (edge == EDGE_FALLING)
     {
-        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
-        duty = duration_pulse / duration * 100;
+        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
+        duty = duration_pulse / duration_cycle * 100;
         counter_edge_falling = counter;
     }
 }
@@ -55,20 +56,21 @@ static void capture_pin_0_handler(uint counter, edge_type_t edge)
 static void capture_pin_1_handler(uint counter, edge_type_t edge)
 {
     static uint counter_edge_rising = 0, counter_edge_falling = 0;
+    capture_counter = counter;
     pin = 1;
     is_captured = true;
     edge_type = edge;
 
     if (edge == EDGE_RISING)
     {
-        duration = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
-        frequency = 1 / duration;
+        duration_cycle = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
+        frequency = 1 / duration_cycle;
         counter_edge_rising = counter;
     }
     if (edge == EDGE_FALLING)
     {
-        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * clk_div * COUNTER_CYCLES;
-        duty = duration_pulse / duration * 100;
+        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
+        duty = duration_pulse / duration_cycle * 100;
         counter_edge_falling = counter;
     }
 }
@@ -89,7 +91,7 @@ int main()
     {
         if (is_captured)
         {
-            printf("\n\rCapture pin %u. Counter: %u State: %s Duration(us): %.0f", pin, counter, edge_type == EDGE_FALLING ? "High" : "Low ", duration * 1000000);
+            printf("\n\rCapture pin %u. Counter: %u State: %s Duration(us): %.0f", pin, capture_counter, edge_type == EDGE_FALLING ? "High" : "Low ", duration_cycle * 1000000);
             if (edge_type == EDGE_RISING)
                 printf(" Freq(Hz): %.1f Duty: %.1f", frequency, duty);
             is_captured = false;
