@@ -10,19 +10,15 @@
 
 #include "capture_edge.h"
 
+#include "hardware/dma.h"
+#include "hardware/irq.h"
+
 #define BUFFER_RING_BITS 10
 #define BUFFER_SIZE (1 << BUFFER_RING_BITS)
 
 static const uint reload_counter_ = 0xffffffff, reload_write_pins_ = 1;
-static uint sm_,
-    offset_,
-    dma_channel_write_pins_,
-    dma_channel_write_counter_,
-    dma_channel_reload_,
-    dma_channel_counter_,
-    dma_channel_reload_counter_,
-    dma_channel_configure_write_pins_,
-    buffer_pos_ = 0;
+static uint sm_, offset_, dma_channel_write_pins_, dma_channel_write_counter_, dma_channel_reload_,
+    dma_channel_counter_, dma_channel_reload_counter_, dma_channel_configure_write_pins_, buffer_pos_ = 0;
 static PIO pio_;
 static uint32_t buffer_pins_[BUFFER_SIZE] __attribute__((aligned(BUFFER_SIZE * sizeof(uint32_t))));
 static uint32_t buffer_counter_[BUFFER_SIZE] __attribute__((aligned(BUFFER_SIZE * sizeof(uint32_t))));
@@ -32,8 +28,7 @@ static inline void handler_pio(void);
 static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev);
 static inline uint bit_value(uint pos);
 
-void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
-{
+void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq) {
     pio_ = pio;
 
     // pio capture
@@ -67,13 +62,10 @@ void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
     channel_config_set_read_increment(&config_dma_channel_write_pins, false);
     channel_config_set_dreq(&config_dma_channel_write_pins, pio_get_dreq(pio_, sm_, false));
     channel_config_set_chain_to(&config_dma_channel_write_pins, dma_channel_write_counter_);
-    dma_channel_configure(
-        dma_channel_write_pins_,
-        &config_dma_channel_write_pins,
-        &buffer_pins_,   // write address
-        &pio_->rxf[sm_], // read address
-        1,
-        false);
+    dma_channel_configure(dma_channel_write_pins_, &config_dma_channel_write_pins,
+                          &buffer_pins_,    // write address
+                          &pio_->rxf[sm_],  // read address
+                          1, false);
 
     // dma channel write counter
     dma_channel_config config_dma_channel_write_counter = dma_channel_get_default_config(dma_channel_write_counter_);
@@ -82,27 +74,22 @@ void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
     channel_config_set_write_increment(&config_dma_channel_write_counter, true);
     channel_config_set_read_increment(&config_dma_channel_write_counter, false);
     channel_config_set_chain_to(&config_dma_channel_write_counter, dma_channel_configure_write_pins_);
-    dma_channel_configure(
-        dma_channel_write_counter_,
-        &config_dma_channel_write_counter,
-        &buffer_counter_,                                 // write address
-        &dma_hw->ch[dma_channel_counter_].transfer_count, // read address
-        1,
-        false);
+    dma_channel_configure(dma_channel_write_counter_, &config_dma_channel_write_counter,
+                          &buffer_counter_,                                  // write address
+                          &dma_hw->ch[dma_channel_counter_].transfer_count,  // read address
+                          1, false);
 
     // dma channel configure write pins
-    dma_channel_config config_dma_channel_configure_write_pins = dma_channel_get_default_config(dma_channel_configure_write_pins_);
+    dma_channel_config config_dma_channel_configure_write_pins =
+        dma_channel_get_default_config(dma_channel_configure_write_pins_);
     channel_config_set_ring(&config_dma_channel_configure_write_pins, true, BUFFER_RING_BITS + 1);
     channel_config_set_transfer_data_size(&config_dma_channel_configure_write_pins, DMA_SIZE_32);
     channel_config_set_write_increment(&config_dma_channel_configure_write_pins, false);
     channel_config_set_read_increment(&config_dma_channel_configure_write_pins, false);
-    dma_channel_configure(
-        dma_channel_configure_write_pins_,
-        &config_dma_channel_configure_write_pins,
-        &dma_hw->ch[dma_channel_write_pins_].al1_transfer_count_trig, // write address
-        &reload_write_pins_,                                          // read address
-        1,
-        false);
+    dma_channel_configure(dma_channel_configure_write_pins_, &config_dma_channel_configure_write_pins,
+                          &dma_hw->ch[dma_channel_write_pins_].al1_transfer_count_trig,  // write address
+                          &reload_write_pins_,                                           // read address
+                          1, false);
 
     // dma channel counter
     dma_channel_config config_dma_channel_counter = dma_channel_get_default_config(dma_channel_counter_);
@@ -112,43 +99,33 @@ void capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)
     dma_timer_set_fraction(dma_timer, 1, COUNTER_CYCLES);
     channel_config_set_dreq(&config_dma_channel_counter, dma_get_timer_dreq(dma_timer));
     channel_config_set_chain_to(&config_dma_channel_counter, dma_channel_reload_counter_);
-    dma_channel_configure(
-        dma_channel_counter_,
-        &config_dma_channel_counter,
-        NULL, // write address
-        NULL, // read address
-        0xffffffff,
-        false);
+    dma_channel_configure(dma_channel_counter_, &config_dma_channel_counter,
+                          NULL,  // write address
+                          NULL,  // read address
+                          0xffffffff, false);
 
     // dma channel reload counter
     dma_channel_config config_dma_channel_reload_counter = dma_channel_get_default_config(dma_channel_reload_counter_);
     channel_config_set_transfer_data_size(&config_dma_channel_reload_counter, DMA_SIZE_32);
     channel_config_set_write_increment(&config_dma_channel_reload_counter, false);
     channel_config_set_read_increment(&config_dma_channel_reload_counter, false);
-    dma_channel_configure(
-        dma_channel_reload_counter_,
-        &config_dma_channel_reload_counter,
-        &dma_hw->ch[dma_channel_counter_].al1_transfer_count_trig, // write address
-        &reload_counter_,                                          // read address
-        1,
-        false);
+    dma_channel_configure(dma_channel_reload_counter_, &config_dma_channel_reload_counter,
+                          &dma_hw->ch[dma_channel_counter_].al1_transfer_count_trig,  // write address
+                          &reload_counter_,                                           // read address
+                          1, false);
 
     dma_start_channel_mask((1 << dma_channel_write_pins_) | (1 << dma_channel_counter_));
     pio_sm_set_enabled(pio_, sm_, true);
 }
 
-void capture_edge_set_handler(uint pin, capture_handler_t handler)
-{
-    if (pin < CAPTURE_EDGE_PIN_COUNT)
-    {
+void capture_edge_set_handler(uint pin, capture_handler_t handler) {
+    if (pin < CAPTURE_EDGE_PIN_COUNT) {
         handler_[pin] = handler;
     }
 }
 
-void capture_edge_remove(void)
-{
-    for (uint pin = 0; pin < CAPTURE_EDGE_PIN_COUNT; pin++)
-        capture_edge_set_handler(pin, NULL);
+void capture_edge_remove(void) {
+    for (uint pin = 0; pin < CAPTURE_EDGE_PIN_COUNT; pin++) capture_edge_set_handler(pin, NULL);
     pio_remove_program(pio_, &capture_edge_program, offset_);
     pio_sm_unclaim(pio_, sm_);
     dma_channel_unclaim(dma_channel_write_pins_);
@@ -159,18 +136,14 @@ void capture_edge_remove(void)
     dma_channel_unclaim(dma_channel_configure_write_pins_);
 }
 
-static inline void handler_pio(void)
-{
+static inline void handler_pio(void) {
     static uint prev_pins = 0;
-    while ((((uint32_t *)dma_hw->ch[dma_channel_write_pins_].write_addr) - &buffer_pins_[0]) > buffer_pos_)
-    {
+    while ((((uint32_t *)dma_hw->ch[dma_channel_write_pins_].write_addr) - &buffer_pins_[0]) > buffer_pos_) {
         uint counter = ~buffer_counter_[buffer_pos_ % BUFFER_SIZE];
         uint pins = buffer_pins_[buffer_pos_ % BUFFER_SIZE];
-        for (uint pin = 0; pin < CAPTURE_EDGE_PIN_COUNT; pin++)
-        {
+        for (uint pin = 0; pin < CAPTURE_EDGE_PIN_COUNT; pin++) {
             edge_type_t edge = get_captured_edge(pin, pins, prev_pins);
-            if (edge && *handler_[pin])
-                handler_[pin](counter, edge);
+            if (edge && *handler_[pin]) handler_[pin](counter, edge);
         }
         prev_pins = pins;
         buffer_pos_++;
@@ -178,16 +151,10 @@ static inline void handler_pio(void)
     pio_interrupt_clear(pio_, CAPTURE_EDGE_IRQ_NUM);
 }
 
-static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev)
-{
-    if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && (bit_value(pin) & pins))
-        return EDGE_RISING;
-    if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && !(bit_value(pin) & pins))
-        return EDGE_FALLING;
+static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev) {
+    if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && (bit_value(pin) & pins)) return EDGE_RISING;
+    if ((bit_value(pin) & pins) ^ (bit_value(pin) & prev) && !(bit_value(pin) & pins)) return EDGE_FALLING;
     return EDGE_NONE;
 }
 
-static inline uint bit_value(uint pos)
-{
-    return 1 << pos;
-}
+static inline uint bit_value(uint pos) { return 1 << pos; }

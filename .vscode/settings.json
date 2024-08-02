@@ -1,6 +1,8 @@
 {
+    "cmake.sourceDirectory": "${workspaceFolder}/sdk",
     "files.associations": {
-        "stdio.h": "c"
-    },
-    "cmake.sourceDirectory": "${workspaceFolder}/sdk"
+        "capture_edge.pio.h": "c",
+        "dma.h": "c",
+        "pio.h": "c"
+    }
 }
