@@ -8,21 +8,19 @@
  * Library for pin capture timer for RP2040
  */
 
-.define PUBLIC CAPTURE_EDGE_PIN_COUNT 2   // use 1 to 32
 .define PUBLIC CAPTURE_EDGE_IRQ_NUM 2     // use 0 to 3
 
 .define PUBLIC COUNTER_CYCLES 5
 
 .program capture_edge
-.define ZERO_COUNT 32-CAPTURE_EDGE_PIN_COUNT
 capture:
     irq CAPTURE_EDGE_IRQ_NUM
     push
 .wrap_target
 public start:
     mov y x                         // pins to prev
-    in pins CAPTURE_EDGE_PIN_COUNT  // read pins
-    in null ZERO_COUNT
+    nop                             // in pins CAPTURE_EDGE_PIN_COUNT  // read pins
+    nop                             // in null ZERO_COUNT
     mov x isr                       // pins to x
     jmp x!=y capture                // capture
 .wrap
