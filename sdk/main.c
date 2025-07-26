@@ -73,7 +73,7 @@ static void capture_pin_1_handler(uint counter, edge_type_t edge) {
 int main() {
     PIO pio = pio0;         // values: pio0, pio1
     uint pin_base = 0;      // starting gpio to capture
-    uint pin_count = 2;      // starting gpio to capture
+    uint pin_count = 2;     // gpios count
     uint irq = PIO0_IRQ_0;  // values for pio0: PIO0_IRQ_0, PIO0_IRQ_1. values for pio1: PIO1_IRQ_0, PIO1_IRQ_1
 
     stdio_init_all();
