@@ -17,9 +17,11 @@
 
 #define MAX_PIN_COUNT 2
 
-static uint pins_, counter_;
+static volatile uint pins_, counter_;
 static const uint reload_counter_ = 0xffffffff;
 static const uint reload_pins_ = 1;
+static uint dummy_;  // sink for counter DMA transfers; NULL must not be used because address
+                     // 0x00000000 maps to the RP2040 boot ROM
 
 static uint sm_, offset_;
 static uint dma_channel_write_pins_, dma_channel_write_counter_, dma_channel_counter_;
@@ -29,6 +31,7 @@ static uint pin_count_, irq_;
 
 static bool initialized_ = false;
 static PIO pio_;
+static uint prev_pins_ = 0;  // previous pin state for edge detection; reset on each init
 static void (*handler_[MAX_PIN_COUNT])(uint counter, edge_type_t edge) = {NULL};
 
 static inline void handler_pio(void);
@@ -49,6 +52,7 @@ void capture_edge_init(PIO pio, uint pin_base, uint pin_count, float clk_div, ui
     irq_ = irq;
     pins_ = 0;
     counter_ = 0;
+    prev_pins_ = 0;
 
     for (uint pin = 0; pin < MAX_PIN_COUNT; pin++) {
         handler_[pin] = NULL;
@@ -124,8 +128,8 @@ void capture_edge_init(PIO pio, uint pin_base, uint pin_count, float clk_div, ui
     channel_config_set_dreq(&config_dma_channel_counter, dma_get_timer_dreq(dma_timer_));
     channel_config_set_chain_to(&config_dma_channel_counter, dma_channel_reload_counter_);
     dma_channel_configure(dma_channel_counter_, &config_dma_channel_counter,
-                          NULL,  // write address
-                          NULL,  // read address
+                          &dummy_,  // write address (data discarded)
+                          &dummy_,  // read address (data unused)
                           0xffffffff, false);
 
     // DMA channel: reload counter transfer count
@@ -185,6 +189,7 @@ void capture_edge_remove(void) {
     }
 
     irq_set_enabled(irq_, false);
+    irq_remove_handler(irq_, handler_pio);
     pio_interrupt_clear(pio_, CAPTURE_EDGE_IRQ_NUM);
 
     // Stop state machine
@@ -221,20 +226,19 @@ void capture_edge_remove(void) {
 }
 
 static inline void handler_pio(void) {
-    static uint prev_pins = 0;
+    pio_interrupt_clear(pio_, CAPTURE_EDGE_IRQ_NUM);
 
     uint counter = ~counter_;
     uint pins = pins_;
 
     for (uint pin = 0; pin < pin_count_; pin++) {
-        edge_type_t edge = get_captured_edge(pin, pins, prev_pins);
+        edge_type_t edge = get_captured_edge(pin, pins, prev_pins_);
         if (handler_[pin] && edge) {
             handler_[pin](counter, edge);
         }
     }
 
-    prev_pins = pins;
-    pio_interrupt_clear(pio_, CAPTURE_EDGE_IRQ_NUM);
+    prev_pins_ = pins;
 }
 
 static inline edge_type_t get_captured_edge(uint pin, uint pins, uint prev) {
