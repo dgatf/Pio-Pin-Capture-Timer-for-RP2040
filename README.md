@@ -1,52 +1,78 @@
 ## Pin Capture Timer library for RP2040
 
-A library to capture signal edges on any pins of the RP2040 using PIO and a DMA buffer. It is compatible with the [SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
+A library for capturing signal edges on RP2040 pins using PIO and DMA. It is compatible with both the [Pico SDK](https://raspberrypi.github.io/pico-sdk-doxygen/) and [Arduino](https://github.com/earlephilhower/arduino-pico).
 
-How to use it:
+## How to use
 
-- With SDK. Add *capture_edge.pio, capture_edge.h and capture_edge.c,* to your project. Modify CMakeLists.txt. Add *pico_generate_pio_header* and the required libraries (pico_stdlib, hardware_irq, hardware_pio, hardware_clocks, hardware_dma). See [CMakeLists.txt](sdk/CMakeLists.txt)
-- With Arduino. Add *capture_edge.pio.h, capture_edge.h and capture_edge.c* to your project
-- Set the number of pins to capture with CAPTURE_EDGE_PIN_COUNT in *capture_edge.pio* or in *capture_edge.pio.h* if using Arduino. Capture pins starts at *pin_base*. All available pins can be captured.
-- Define the capture handlers which receives the counter value and the edge type (fall or rise).
-- Change CAPTURE_EDGE_IRQ_NUM if conflicts with other state machines irqs. Valid values 0 to 3.  
+- **With Pico SDK**
+  Add `capture_edge.pio`, `capture_edge.h`, and `capture_edge.c` to your project.  
+  Update `CMakeLists.txt` to include `pico_generate_pio_header` and the required libraries: `pico_stdlib`, `hardware_irq`, `hardware_pio`, `hardware_clocks`, and `hardware_dma`.  
+  See [`CMakeLists.txt`](sdk/CMakeLists.txt).
 
-See [main.c](sdk/main.c) with code example to calculate *frecuency* and *duty*. Counter increments every 9 clock cycles. This value is defined in COUNTER_CYCLES. To obtain total clock divisor multiply:  COUNTER_CYCLES * *clk_div*.  
-\
-Functions:  
-\
-**uint capture_edge_init(PIO pio, uint pin_base, float clk_div, irq)**  
+- **With Arduino**
+  Add `capture_edge.pio.h`, `capture_edge.h`, and `capture_edge.c` to your project.
 
-Parameters:  
-&nbsp;&nbsp;**pio** - load the capture program at pio0 or pio1  
-&nbsp;&nbsp;**pin_base** - set the first capture pin  
-&nbsp;&nbsp;**clk_div** - set the clock divisor  
-&nbsp;&nbsp;**irq** - select the pio irq. Valid values for pio0: PIO0_IRQ_0, PIO0_IRQ_1 and for pio1: PIO1_IRQ_0, PIO1_IRQ_1. Useful if other states machines are also using irqs.  
+- Set the number of pins to capture with `CAPTURE_EDGE_PIN_COUNT` in `capture_edge.pio`, or in `capture_edge.pio.h` when using Arduino.
 
-Returns:  
-&nbsp;&nbsp;State machine used  
-\
-**void capture_edge_set_irq(uint pin, capture_handler_t handler)**  
+- Captured pins start at `pin_base`. Any consecutive GPIOs starting from that pin can be captured.
 
-Parameters:  
-&nbsp;&nbsp;**pin** - pin to capture  
-&nbsp;&nbsp;**handler** - function to handle the capture edge interrupt  
-\
-**void capture_edge_remove(void)**  
+- Define capture handlers that receive the counter value and the edge type (`rising` or `falling`).
 
-Reset handlers and removes pio program from memory.  
-\
-Handler functions:  
-\
-**void capture_handler(uint counter, edge_type_t edge)**  
+- Change `CAPTURE_EDGE_IRQ_NUM` if it conflicts with interrupts used by other PIO state machines. Valid values are `0` to `3`.
 
-Parameters received:  
-&nbsp;&nbsp;**counter** - counter   
-&nbsp;&nbsp;**edge** - type of edge: EDGE_RISING = 2, EDGE_FALLING = 1  
-\
-With *clock_div = 1*, the accuracy on frecuency measurement is 18 clock cycles (9 cycles per edge). For a clock frecuency of 125Mhz, accuracy on edge is 0.072 μs and on frecuency is 0.144 μs.
+See [`main.c`](sdk/main.c) for an example that calculates **frequency** and **duty cycle**.
 
-<p align="center"><img src="./images/capture1.png" width="800"><br>  
-  <i>Capturing edges with RP2040, verifying with the oscilloscope</i><br><br></p>
+The counter increments every 5 clock cycles. This value is defined in `COUNTER_CYCLES`.
+
+To obtain the total clock divisor, multiply:
+
+`COUNTER_CYCLES * clk_div`
+
+## Functions
+
+### `uint capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)`
+
+**Parameters:**
+
+- **pio** — load the capture program into `pio0` or `pio1`
+- **pin_base** — first GPIO to capture
+- **clk_div** — PIO clock divisor
+- **irq** — PIO IRQ to use. Valid values for `pio0`: `PIO0_IRQ_0`, `PIO0_IRQ_1`; for `pio1`: `PIO1_IRQ_0`, `PIO1_IRQ_1`. This is useful when other state machines are also using IRQs.
+
+**Returns:**
+
+- State machine used
+
+### `void capture_edge_set_handler(uint pin, capture_handler_t handler)`
+
+**Parameters:**
+
+- **pin** — pin to capture
+- **handler** — callback function called when an edge is captured
+
+### `void capture_edge_remove(void)`
+
+Clears the handlers and removes the PIO program from memory.
+
+## Handler function
+
+### `void capture_handler(uint counter, edge_type_t edge)`
+
+**Parameters received:**
+
+- **counter** — captured counter value
+- **edge** — edge type: `EDGE_RISING = 2`, `EDGE_FALLING = 1`
+
+## Accuracy
+
+With `clk_div = 1`, the frequency measurement resolution is 18 clock cycles (9 cycles per edge).  
+At a 125 MHz system clock, this gives:
+
+- edge timing resolution: `0.072 µs`
+- frequency measurement resolution: `0.144 µs`
+
+<p align="center"><img src="./images/capture1.png" width="800"><br>
+  <i>Capturing edges with the RP2040 and verifying the signal with an oscilloscope</i><br><br></p>
 
 <p align="center"><img src="./images/capture2.jpg" width="800"><br>
-  <i>Uno is generating the signal, Mega is the oscilloscope and RP2040 is capturing edges</i><br><br></p>
+  <i>An Arduino Uno generates the signal, a Mega is used as the oscilloscope, and the RP2040 captures the edges</i><br><br></p>

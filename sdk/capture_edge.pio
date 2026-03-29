@@ -14,8 +14,8 @@
 
 .program capture_edge
 capture:
-    irq CAPTURE_EDGE_IRQ_NUM
     push
+    irq CAPTURE_EDGE_IRQ_NUM
 .wrap_target
 public start:
     mov y x                         // pins to prev

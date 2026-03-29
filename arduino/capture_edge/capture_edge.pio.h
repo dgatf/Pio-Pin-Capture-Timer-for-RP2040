@@ -22,8 +22,8 @@
 #define capture_edge_offset_start 2u
 
 static const uint16_t capture_edge_program_instructions[] = {
-    0xc002, //  0: irq    nowait 2
-    0x8020, //  1: push   block
+    0x8020, //  0: push   block
+    0xc002, //  1: irq    nowait 2
             //     .wrap_target
     0xa041, //  2: mov    y, x
     0xa042, //  3: nop

@@ -26,47 +26,75 @@
 #include "hardware/clocks.h"
 #include "pico/stdlib.h"
 
-float clk_div = 1;
-volatile uint capture_counter, pin;
-volatile float frequency, duty, duration_cycle;
-volatile bool is_captured;
-volatile edge_type_t edge_type;
+float clk_div = 1.0f;
+
+volatile uint capture_counter = 0;
+volatile uint pin = 0;
+volatile float frequency = 0.0f;
+volatile float duty = 0.0f;
+volatile float duration_cycle = 0.0f;
+volatile float duration_pulse = 0.0f;
+volatile bool is_captured = false;
+volatile bool period_valid = false;
+volatile edge_type_t edge_type = EDGE_NONE;
 
 static void capture_pin_0_handler(uint counter, edge_type_t edge) {
-    static uint counter_edge_rising = 0, counter_edge_falling = 0;
+    static uint counter_edge_rising = 0;
+
+    const float tick_seconds = (float)COUNTER_CYCLES / (float)clock_get_hz(clk_sys);
+
     capture_counter = counter;
     pin = 0;
-    is_captured = true;
     edge_type = edge;
 
     if (edge == EDGE_RISING) {
-        duration_cycle = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
-        frequency = 1 / duration_cycle;
+        if (counter_edge_rising != 0) {
+            duration_cycle = (float)(counter - counter_edge_rising) * tick_seconds;
+            if (duration_cycle > 0.0f) {
+                frequency = 1.0f / duration_cycle;
+                period_valid = true;
+            }
+        }
         counter_edge_rising = counter;
-    }
-    if (edge == EDGE_FALLING) {
-        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
-        duty = duration_pulse / duration_cycle * 100;
-        counter_edge_falling = counter;
+        is_captured = true;
+    } else if (edge == EDGE_FALLING) {
+        if (counter_edge_rising != 0) {
+            duration_pulse = (float)(counter - counter_edge_rising) * tick_seconds;
+            if (period_valid && duration_cycle > 0.0f) {
+                duty = duration_pulse / duration_cycle * 100.0f;
+            }
+            is_captured = true;
+        }
     }
 }
 
 static void capture_pin_1_handler(uint counter, edge_type_t edge) {
-    static uint counter_edge_rising = 0, counter_edge_falling = 0;
+    static uint counter_edge_rising = 0;
+
+    const float tick_seconds = (float)COUNTER_CYCLES / (float)clock_get_hz(clk_sys);
+
     capture_counter = counter;
     pin = 1;
-    is_captured = true;
     edge_type = edge;
 
     if (edge == EDGE_RISING) {
-        duration_cycle = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
-        frequency = 1 / duration_cycle;
+        if (counter_edge_rising != 0) {
+            duration_cycle = (float)(counter - counter_edge_rising) * tick_seconds;
+            if (duration_cycle > 0.0f) {
+                frequency = 1.0f / duration_cycle;
+                period_valid = true;
+            }
+        }
         counter_edge_rising = counter;
-    }
-    if (edge == EDGE_FALLING) {
-        float duration_pulse = (float)(counter - counter_edge_rising) / clock_get_hz(clk_sys) * COUNTER_CYCLES;
-        duty = duration_pulse / duration_cycle * 100;
-        counter_edge_falling = counter;
+        is_captured = true;
+    } else if (edge == EDGE_FALLING) {
+        if (counter_edge_rising != 0) {
+            duration_pulse = (float)(counter - counter_edge_rising) * tick_seconds;
+            if (period_valid && duration_cycle > 0.0f) {
+                duty = duration_pulse / duration_cycle * 100.0f;
+            }
+            is_captured = true;
+        }
     }
 }
 
@@ -84,10 +112,47 @@ int main() {
 
     while (true) {
         if (is_captured) {
-            printf("\n\rCapture pin %u. Counter: %u State: %s Duration(us): %.0f", pin, capture_counter,
-                   edge_type == EDGE_FALLING ? "High" : "Low ", duration_cycle * 1000000);
-            if (edge_type == EDGE_RISING) printf(" Freq(Hz): %.1f Duty: %.1f", frequency, duty);
+            uint local_capture_counter;
+            uint local_pin;
+            float local_frequency;
+            float local_duty;
+            float local_duration_cycle;
+            float local_duration_pulse;
+            bool local_period_valid;
+            edge_type_t local_edge_type;
+
+            local_capture_counter = capture_counter;
+            local_pin = pin;
+            local_frequency = frequency;
+            local_duty = duty;
+            local_duration_cycle = duration_cycle;
+            local_duration_pulse = duration_pulse;
+            local_period_valid = period_valid;
+            local_edge_type = edge_type;
             is_captured = false;
+
+            if (local_edge_type == EDGE_RISING) {
+                printf("\r\nCapture pin %u. Counter: %u Edge: Rising",
+                       local_pin, local_capture_counter);
+
+                if (local_period_valid) {
+                    printf(" Period(us): %.0f Freq(Hz): %.1f Duty: %.1f",
+                           local_duration_cycle * 1000000.0f,
+                           local_frequency,
+                           local_duty);
+                } else {
+                    printf(" Period: n/a");
+                }
+            } else if (local_edge_type == EDGE_FALLING) {
+                printf("\r\nCapture pin %u. Counter: %u Edge: Falling",
+                       local_pin, local_capture_counter);
+
+                printf(" PulseHigh(us): %.0f", local_duration_pulse * 1000000.0f);
+
+                if (local_period_valid) {
+                    printf(" Duty: %.1f", local_duty);
+                }
+            }
         }
     }
 }
