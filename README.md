@@ -30,12 +30,13 @@ To obtain the total clock divisor, multiply:
 
 ## Functions
 
-### `uint capture_edge_init(PIO pio, uint pin_base, float clk_div, uint irq)`
+### `void capture_edge_init(PIO pio, uint pin_base, uint pin_count, float clk_div, uint irq)`
 
 **Parameters:**
 
 - **pio** — load the capture program into `pio0` or `pio1`
 - **pin_base** — first GPIO to capture
+- **pin_count** — number of consecutive GPIOs to capture (1 or 2; passing 0 or a value greater than 2 triggers `panic()`)
 - **clk_div** — PIO clock divisor
 - **irq** — PIO IRQ to use. Valid values for `pio0`: `PIO0_IRQ_0`, `PIO0_IRQ_1`; for `pio1`: `PIO1_IRQ_0`, `PIO1_IRQ_1`. This is useful when other state machines are also using IRQs.
 
